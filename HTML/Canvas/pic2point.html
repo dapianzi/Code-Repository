@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class=" no-touch"><head>
+<head><title>Canvas 转点阵</title></head>
+<body>
+<img src="./timg.jpg" id='img' style="display:none;"  />
+<div id="container" style="width:1200px;height:1038px">
+<canvas id="cvs" width="1200" height="1038"></canvas>
+</div>
+<script type="text/javascript">
+    var config = {
+        // ...
+    }
+
+    function isCover(imgdata, width, x, y) {
+        var covered = 0;
+        for (var i=x; i<x+8; i++) {
+            for (var j=y; j<y+8; j++) {
+                var idx = i*4*width + 4*j;
+
+                if (imgdata[idx]<192 || imgdata[idx+1]<192 || imgdata[idx+2]<192 ) {
+                    covered++;
+                }
+                if (covered > 45) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function drawPoints(imgdata, width, x, y, clear=false) {
+        for (var i=x; i<x+8; i++) {
+            for (var j=y; j<y+8; j++) {
+                var idx = i*4*width + 4*j;
+                if (i >=x+2 && i<x+6 && j>=y+2 && j<y+6 && !clear) {
+                    imgdata[idx] = 168;
+                    imgdata[idx+1] = 168;
+                    imgdata[idx+2] = 168;
+                    imgdata[idx+3] = 192;
+                } else {
+                    imgdata[idx] = 255;
+                    imgdata[idx+1] = 255;
+                    imgdata[idx+2] = 255;
+                    imgdata[idx+3] = 0;
+                }
+            }
+        }
+        return imgdata;
+    }
+
+    function convertPointArray(img) {
+        for (var i=0; i<img.height; i=i+8) {
+            for (var j=0; j<img.width; j=j+8) {
+                var isCovered = isCover(img.data, img.width, i, j);
+                if (isCovered) {
+                    img.data = drawPoints(img.data, img.width, i, j);
+                } else {
+                    img.data = drawPoints(img.data, img.width, i, j, true);
+                }
+            }
+        }
+        return img;
+    }
+
+    function _init() {
+        var cvs = document.getElementById('cvs'),
+            ctx = cvs.getContext('2d'),
+            img = new Image();
+        img = document.getElementById('img');
+        img.crossOrigin = "*";
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+            var imageData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+            imageData = convertPointArray(imageData);
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            ctx.putImageData(imageData, 0, 0);
+        }
+    }
+
+    _init();
+</script>
+</body>
+</html>
